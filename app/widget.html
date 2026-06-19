@@ -52,6 +52,13 @@
                 <h3 class="text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3 flex items-center">
                     <span class="w-1 h-2 bg-blue-500 rounded-full mr-2"></span>Personal Information
                 </h3>
+                <div id="attach-personal" class="hidden grid grid-cols-1 gap-3 pb-3">
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Upload Document for OCR</label>
+                        <input id="attach-personal-input" type="file" accept="image/*,.pdf" class="form-input form-file w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" onchange="handleAttachmentUpload(this, 'personal')" />
+                        <p id="attach-personal-status" class="text-[7px] font-semibold text-slate-400"></p>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-3 pb-3">
                     <div class="space-y-0.5">
                         <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Date of Birth</label>
@@ -68,6 +75,13 @@
                 <h3 class="text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3 flex items-center">
                     <span class="w-1 h-2 bg-amber-500 rounded-full mr-2"></span>Emirates ID / Residence Visa
                 </h3>
+                <div id="attach-eid" class="hidden grid grid-cols-1 gap-3 pb-3">
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Upload Document for OCR</label>
+                        <input id="attach-eid-input" type="file" accept="image/*,.pdf" class="form-input form-file w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" onchange="handleAttachmentUpload(this, 'eid')" />
+                        <p id="attach-eid-status" class="text-[7px] font-semibold text-slate-400"></p>
+                    </div>
+                </div>
                 <div class="grid grid-cols-3 gap-3 pb-3">
                     <div class="col-span-3 space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Emirates ID Number</label><input id="field-eid-number" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200 font-mono" /></div>
                     <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">EID Issue Date</label><input id="field-eid-issue" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" /></div>
@@ -79,6 +93,13 @@
                 <h3 class="text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3 flex items-center">
                     <span class="w-1 h-2 bg-indigo-500 rounded-full mr-2"></span>Passport Details
                 </h3>
+                <div id="attach-passport" class="hidden grid grid-cols-1 gap-3 pb-3">
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Upload Document for OCR</label>
+                        <input id="attach-passport-input" type="file" accept="image/*,.pdf" class="form-input form-file w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" onchange="handleAttachmentUpload(this, 'passport')" />
+                        <p id="attach-passport-status" class="text-[7px] font-semibold text-slate-400"></p>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Number</label><input id="field-pp-number" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200 font-mono" /></div>
                     <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Issuing Country</label><select id="field-pp-country" class="form-input form-select w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200"></select></div>
@@ -91,6 +112,13 @@
                 <h3 class="text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3 flex items-center">
                     <span class="w-1 h-2 bg-emerald-500 rounded-full mr-2"></span>Trade License Information
                 </h3>
+                <div id="attach-tl" class="hidden grid grid-cols-1 gap-3 pb-3">
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Upload Document for OCR</label>
+                        <input id="attach-tl-input" type="file" accept="image/*,.pdf" class="form-input form-file w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" onchange="handleAttachmentUpload(this, 'tl')" />
+                        <p id="attach-tl-status" class="text-[7px] font-semibold text-slate-400"></p>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="col-span-2 space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Name</label><input id="tl-name" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" /></div>
                     <div class="col-span-2 space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Number</label><input id="tl-license-number" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200 font-mono" /></div>
