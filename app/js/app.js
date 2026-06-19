@@ -21,7 +21,7 @@ function populateCountrySelects(countries, selectedNationality = "") {
 }
 
 ZOHO.embeddedApp.on("PageLoad", async function (entity) {
-    ZOHO.CRM.UI.Resize({ height: "550", width: "800" });
+    ZOHO.CRM.UI.Resize({ height: "550", width: "1100" });
     currentRecordId = entity.data?.recordId;
     await initPortal();
 });
@@ -30,7 +30,9 @@ ZOHO.embeddedApp.init();
 
 async function initPortal() {
     try {
-        const countryResponse = await ZOHO.CRM.FUNCTIONS.execute("fta_case_get_countries", { "arguments": "{}" });
+        const argObj = {};
+        const countryResponse = await ZOHO.CRM.FUNCTIONS.execute("fta_case_get_countries", { "arguments": JSON.stringify(argObj) });
+
         if (countryResponse?.details?.output) {
             const responseData = JSON.parse(countryResponse.details.output);
             const countries = responseData.data.map(item => item.Data).sort();
@@ -47,7 +49,9 @@ async function initPortal() {
 
 async function fetchData() {
     try {
-        const response = await ZOHO.CRM.FUNCTIONS.execute("fta_get_case_get_record", { "arguments": JSON.stringify({ "fta_id": currentRecordId }) });
+        const argObj = { "fta_id": currentRecordId };
+        const response = await ZOHO.CRM.FUNCTIONS.execute("fta_get_case_get_record", { "arguments": JSON.stringify(argObj) });
+
         if (response?.details?.output) {
             const data = JSON.parse(response.details.output);
             currentAccountID = data.account_id;
@@ -97,16 +101,29 @@ function renderPortal(data) {
     document.getElementById("tl-expiry-date").value = shouldPopulate ? formatDateForInput(data.tl_expiry_date) : "";
     
     const docType = (data.document_type || "").toLowerCase();
-    document.getElementById("section-eid").classList.add("hidden");
-    document.getElementById("section-passport").classList.add("hidden");
-    document.getElementById("section-tl").classList.add("hidden");
+    
+    const personalSection = document.getElementById("section-personal");
+    const clientNameGroup = document.getElementById("group-client-name");
+    const eidSection = document.getElementById("section-eid");
+    const passportSection = document.getElementById("section-passport");
+    const tlSection = document.getElementById("section-tl");
 
+    // Reset visibilities
+    eidSection.classList.add("hidden");
+    passportSection.classList.add("hidden");
+    tlSection.classList.add("hidden");
+    personalSection.classList.remove("hidden");
+    clientNameGroup.classList.remove("hidden");
+
+    // Conditional visibility
     if (docType.includes("trade license")) {
-        document.getElementById("section-tl").classList.remove("hidden");
+        tlSection.classList.remove("hidden");
+        personalSection.classList.add("hidden");
+        clientNameGroup.classList.add("hidden");
     } else if (docType.includes("eid") || docType.includes("visa")) {
-        document.getElementById("section-eid").classList.remove("hidden");
+        eidSection.classList.remove("hidden");
     } else if (docType.includes("passport")) {
-        document.getElementById("section-passport").classList.remove("hidden");
+        passportSection.classList.remove("hidden");
     }
 }
 
@@ -135,10 +152,21 @@ async function submitForm() {
 
 const triggerLog = async (action, recordData) => {
     try {
-        const payload = { "action": action, "account_id": currentAccountID, "fta_id": currentRecordId, "affected_record": recordData };
-        const logRes = await ZOHO.CRM.FUNCTIONS.execute("fta_case_update", { "arguments": JSON.stringify(payload) });
-        alert("Record updated successfully!");
-    } catch (err) { alert("Failed to update record."); }
+        const payload = { 
+            "action": action, 
+            "account_id": currentAccountID, 
+            "fta_id": currentRecordId, 
+            "affected_record": recordData 
+        };
+        
+        await ZOHO.CRM.FUNCTIONS.execute("fta_case_update", { "arguments": JSON.stringify(payload) });
+        
+        document.getElementById("success-modal").classList.remove("hidden");
+    } catch (err) { 
+        document.getElementById("error-modal").classList.remove("hidden");
+    }
 };
 
-function closeAndReload() { ZOHO.CRM.UI.Popup.closeReload(); }
+function closeAndReload() { 
+    $Client.close();  
+}
