@@ -85,12 +85,6 @@ function renderPortal(data) {
 
     const shouldPopulate = data.modification_origin && data.modification_origin.trim() !== "";
 
-    // Removed attach-personal from the list to hide
-    ["attach-eid", "attach-passport", "attach-tl"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle("hidden", shouldPopulate);
-    });
-
     document.getElementById("field-dob").value = shouldPopulate ? formatDateForInput(data.date_of_birth) : "";
     
     const countries = Array.from(document.getElementById("field-nationality").options).slice(1).map(o => o.value);
@@ -138,6 +132,55 @@ function renderPortal(data) {
 }
 
 async function submitForm() {
+    const docType = (document.getElementById("field-document-type").textContent || "").toLowerCase();
+    
+    // Clear existing error styling
+    document.querySelectorAll('.error-text').forEach(el => el.remove());
+    document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500'));
+
+    let isValid = true;
+    const requiredFields = [];
+
+    if (docType.includes("trade license")) {
+        requiredFields.push(
+            document.getElementById("tl-name"),
+            document.getElementById("tl-license-number"),
+            document.getElementById("tl-start-date"),
+            document.getElementById("tl-expiry-date")
+        );
+    } else if (docType.includes("eid") || docType.includes("visa")) {
+        requiredFields.push(
+            document.getElementById("field-dob"),
+            document.getElementById("field-nationality"),
+            document.getElementById("field-eid-number"),
+            document.getElementById("field-eid-issue"),
+            document.getElementById("field-eid-expiry")
+        );
+    } else if (docType.includes("passport")) {
+        requiredFields.push(
+            document.getElementById("field-dob"),
+            document.getElementById("field-nationality"),
+            document.getElementById("field-pp-number"),
+            document.getElementById("field-pp-country"),
+            document.getElementById("field-pp-issue"),
+            document.getElementById("field-pp-expiry")
+        );
+    }
+
+    for (const field of requiredFields) {
+        if (!field.value || field.value.trim() === "") {
+            isValid = false;
+            field.classList.add('border-red-500');
+            
+            const error = document.createElement('p');
+            error.className = 'error-text text-[7px] text-red-500 font-black mt-1';
+            error.textContent = 'Required field';
+            field.parentNode.appendChild(error);
+        }
+    }
+
+    if (!isValid) return;
+
     const recordData = {
         tl_name: document.getElementById("tl-name").value,
         tl_license_number: document.getElementById("tl-license-number").value,
@@ -177,43 +220,6 @@ const triggerLog = async (action, recordData) => {
         document.getElementById("error-modal").classList.remove("hidden");
     }
 };
-
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-async function handleAttachmentUpload(inputEl, sectionKey) {
-    const file = inputEl.files?.[0];
-    if (!file) return;
-
-    const statusEl = document.getElementById(`attach-${sectionKey}-status`);
-    if (statusEl) statusEl.textContent = "Uploading...";
-
-    try {
-        const base64Data = await fileToBase64(file);
-        const argObj = {
-            "fta_id": currentRecordId,
-            "account_id": currentAccountID,
-            "section": sectionKey,
-            "file_name": file.name,
-            "file_type": file.type,
-            "file_data": base64Data
-        };
-        console.log("Arguments for fta_case_upload_attachment:", argObj);
-        const response = await ZOHO.CRM.FUNCTIONS.execute("fta_case_upload_attachment", { "arguments": JSON.stringify(argObj) });
-        console.log("Result for fta_case_upload_attachment:", response);
-
-        if (statusEl) statusEl.textContent = `Uploaded: ${file.name}`;
-    } catch (err) {
-        console.error("Attachment upload error:", err);
-        if (statusEl) statusEl.textContent = "Upload failed. Please try again.";
-    }
-}
 
 function closeAndReload() { 
     $Client.close();  
