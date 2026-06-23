@@ -28,6 +28,7 @@
         </div>
 
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+
             <div class="px-4 pt-4 pb-1 border-b border-slate-100 dark:border-slate-700">
                 <h3 class="text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3 flex items-center">
                     <span class="w-1 h-2 bg-slate-500 rounded-full mr-2"></span>Client Overview
@@ -48,30 +49,38 @@
                 </div>
             </div>
 
-            <div id="section-personal" class="px-4 pt-4 pb-1 border-b border-slate-100 dark:border-slate-700">
-                <h3 class="text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3 flex items-center">
-                    <span class="w-1 h-2 bg-blue-500 rounded-full mr-2"></span>Personal Information
-                </h3>
-                <div class="grid grid-cols-2 gap-3 pb-3">
-                    <div class="space-y-0.5">
-                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Date of Birth</label>
-                        <input id="field-dob" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
-                    </div>
-                    <div class="space-y-0.5">
-                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Nationality</label>
-                        <select id="field-nationality" class="form-input form-select w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200"></select>
-                    </div>
-                </div>
-            </div>
-
             <div id="section-eid" class="hidden px-4 pt-4 pb-1 border-b border-slate-100 dark:border-slate-700">
                 <h3 class="text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3 flex items-center">
                     <span class="w-1 h-2 bg-amber-500 rounded-full mr-2"></span>Emirates ID / Residence Visa
                 </h3>
-                <div class="grid grid-cols-3 gap-3 pb-3">
-                    <div class="col-span-3 space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Emirates ID Number</label><input id="field-eid-number" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200 font-mono" /></div>
-                    <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">EID Issue Date</label><input id="field-eid-issue" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" /></div>
-                    <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">EID Expiry Date</label><input id="field-eid-expiry" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" /></div>
+                <div id="attach-eid" class="hidden grid grid-cols-1 gap-3 pb-3">
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Upload Document for OCR</label>
+                        <input id="attach-eid-input" type="file" accept="image/*,.pdf" class="form-input form-file w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" onchange="handleFileSelected(this, 'eid')" />
+                        <div id="attach-eid-prompt" class="hidden mt-3 p-3 rounded-lg text-[10px] font-semibold border-l-4"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pb-3">
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Date of Birth</label>
+                        <input id="eid-dob" type="date" class="dob-field form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Nationality</label>
+                        <select id="eid-nationality" class="nationality-field form-input form-select w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200"></select>
+                    </div>
+                    <div class="col-span-2 space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Emirates ID Number</label>
+                        <input id="field-eid-number" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200 font-mono" />
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">EID Issue Date</label>
+                        <input id="field-eid-issue" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">EID Expiry Date</label>
+                        <input id="field-eid-expiry" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
+                    </div>
                 </div>
             </div>
 
@@ -79,11 +88,38 @@
                 <h3 class="text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3 flex items-center">
                     <span class="w-1 h-2 bg-indigo-500 rounded-full mr-2"></span>Passport Details
                 </h3>
+                <div id="attach-passport" class="hidden grid grid-cols-1 gap-3 pb-3">
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Upload Document for OCR</label>
+                        <input id="attach-passport-input" type="file" accept="image/*,.pdf" class="form-input form-file w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" onchange="handleFileSelected(this, 'passport')" />
+                        <div id="attach-passport-prompt" class="hidden mt-3 p-3 rounded-lg text-[10px] font-semibold border-l-4"></div>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Number</label><input id="field-pp-number" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200 font-mono" /></div>
-                    <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Issuing Country</label><select id="field-pp-country" class="form-input form-select w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200"></select></div>
-                    <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Issue Date</label><input id="field-pp-issue" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" /></div>
-                    <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Expiry Date</label><input id="field-pp-expiry" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" /></div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Date of Birth</label>
+                        <input id="pp-dob" type="date" class="dob-field form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Nationality</label>
+                        <select id="pp-nationality" class="nationality-field form-input form-select w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200"></select>
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Number</label>
+                        <input id="field-pp-number" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200 font-mono" />
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Issuing Country</label>
+                        <select id="field-pp-country" class="form-input form-select w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200"></select>
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Issue Date</label>
+                        <input id="field-pp-issue" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">PP Expiry Date</label>
+                        <input id="field-pp-expiry" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
+                    </div>
                 </div>
             </div>
 
@@ -91,13 +127,33 @@
                 <h3 class="text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3 flex items-center">
                     <span class="w-1 h-2 bg-emerald-500 rounded-full mr-2"></span>Trade License Information
                 </h3>
+                <div id="attach-tl" class="hidden grid grid-cols-1 gap-3 pb-3">
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Upload Document for OCR</label>
+                        <input id="attach-tl-input" type="file" accept="image/*,.pdf" class="form-input form-file w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" onchange="handleFileSelected(this, 'tl')" />
+                        <div id="attach-tl-prompt" class="hidden mt-3 p-3 rounded-lg text-[10px] font-semibold border-l-4"></div>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="col-span-2 space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Name</label><input id="tl-name" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" /></div>
-                    <div class="col-span-2 space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Number</label><input id="tl-license-number" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200 font-mono" /></div>
-                    <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Start Date</label><input id="tl-start-date" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" /></div>
-                    <div class="space-y-0.5"><label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Expiry Date</label><input id="tl-expiry-date" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" /></div>
+                    <div class="col-span-2 space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Name</label>
+                        <input id="tl-name" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
+                    </div>
+                    <div class="col-span-2 space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Number</label>
+                        <input id="tl-license-number" type="text" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200 font-mono" />
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Start Date</label>
+                        <input id="tl-start-date" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
+                    </div>
+                    <div class="space-y-0.5">
+                        <label class="text-[7px] font-black text-slate-400 uppercase tracking-widest block">Trade License Expiry Date</label>
+                        <input id="tl-expiry-date" type="date" class="form-input w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 text-[11px] font-semibold text-slate-800 dark:text-slate-200" />
+                    </div>
                 </div>
             </div>
+
         </div>
 
         <div class="flex justify-center mt-6 mb-10 px-4 gap-3">

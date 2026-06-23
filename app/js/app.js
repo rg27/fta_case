@@ -2,25 +2,38 @@ let currentRecordId;
 let currentAccountID;
 let currentModificationOrigin;
 
+let cachedFileEid = null;
+let cachedFilePassport = null;
+let cachedFileTl = null;
+
 function populateCountrySelects(countries, selectedNationality = "") {
-    const nationalityEl = document.getElementById("field-nationality");
+    console.log("Populating country selects...");
+    const selects = document.querySelectorAll(".nationality-field");
     const passportEl = document.getElementById("field-pp-country");
     
-    if (!nationalityEl || !passportEl) return;
-
-    [nationalityEl, passportEl].forEach(el => {
+    selects.forEach(el => {
         el.innerHTML = '<option value="">-- Select Country --</option>';
         countries.forEach(country => {
             const opt = document.createElement("option");
             opt.value = country;
             opt.textContent = country;
-            if (el.id === "field-nationality" && country === selectedNationality) opt.selected = true;
+            if (country === selectedNationality) opt.selected = true;
             el.appendChild(opt);
         });
     });
+    if (passportEl) {
+        passportEl.innerHTML = '<option value="">-- Select Country --</option>';
+        countries.forEach(country => {
+            const opt = document.createElement("option");
+            opt.value = country;
+            opt.textContent = country;
+            passportEl.appendChild(opt);
+        });
+    }
 }
 
 ZOHO.embeddedApp.on("PageLoad", async function (entity) {
+    console.log("Page Load Triggered");
     ZOHO.CRM.UI.Resize({ height: "550", width: "1100" });
     currentRecordId = entity.data?.recordId;
     await initPortal();
@@ -29,40 +42,43 @@ ZOHO.embeddedApp.on("PageLoad", async function (entity) {
 ZOHO.embeddedApp.init();
 
 async function initPortal() {
+    console.log("Initializing Portal...");
     try {
-        const argObj = {};
-        console.log("Arguments for fta_case_get_countries:", argObj);
-        const countryResponse = await ZOHO.CRM.FUNCTIONS.execute("fta_case_get_countries", { "arguments": JSON.stringify(argObj) });
-        console.log("Result for fta_case_get_countries:", countryResponse);
-
+        const args = { "arguments": "{}" };
+        console.log("Calling fta_case_get_countries with args:", args);
+        const countryResponse = await ZOHO.CRM.FUNCTIONS.execute("fta_case_get_countries", args);
+        console.log("fta_case_get_countries response:", countryResponse);
+        
         if (countryResponse?.details?.output) {
             const responseData = JSON.parse(countryResponse.details.output);
             const countries = responseData.data.map(item => item.Data).sort();
             populateCountrySelects(countries);
         }
         await fetchData();
-        
-        const preloader = document.getElementById("initial-preloader");
-        const portal = document.getElementById("main-portal");
-        if (preloader) preloader.classList.add("fade-out");
-        if (portal) portal.classList.replace("opacity-0", "opacity-100");
-    } catch (err) { console.error("Initialization error:", err); }
+        document.getElementById("initial-preloader")?.classList.add("fade-out");
+        document.getElementById("main-portal")?.classList.replace("opacity-0", "opacity-100");
+    } catch (err) { 
+        console.error("Initialization error:", err); 
+    }
 }
 
 async function fetchData() {
+    console.log("Fetching case record data for ID:", currentRecordId);
     try {
-        const argObj = { "fta_id": currentRecordId };
-        console.log("Arguments for fta_get_case_get_record:", argObj);
-        const response = await ZOHO.CRM.FUNCTIONS.execute("fta_get_case_get_record", { "arguments": JSON.stringify(argObj) });
-        console.log("Result for fta_get_case_get_record:", response);
-
+        const args = { "arguments": JSON.stringify({ "fta_id": currentRecordId }) };
+        console.log("Calling fta_get_case_get_record with args:", args);
+        const response = await ZOHO.CRM.FUNCTIONS.execute("fta_get_case_get_record", args);
+        console.log("fta_get_case_get_record response:", response);
+        
         if (response?.details?.output) {
             const data = JSON.parse(response.details.output);
             currentAccountID = data.account_id;
             currentModificationOrigin = data.modification_origin;
             renderPortal(data);
         }
-    } catch (err) { console.error("Fetch error:", err); }
+    } catch (err) { 
+        console.error("Fetch error:", err); 
+    }
 }
 
 function formatDateForInput(dateStr) {
@@ -71,33 +87,118 @@ function formatDateForInput(dateStr) {
     return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
 }
 
+function clearFields(sectionKey) {
+    console.log("Clearing fields for section:", sectionKey);
+    if (sectionKey === 'eid') {
+        document.getElementById("field-eid-number").value = "";
+        document.getElementById("field-eid-issue").value = "";
+        document.getElementById("field-eid-expiry").value = "";
+    } else if (sectionKey === 'passport') {
+        document.getElementById("field-pp-number").value = "";
+        document.getElementById("field-pp-country").value = "";
+        document.getElementById("field-pp-issue").value = "";
+        document.getElementById("field-pp-expiry").value = "";
+    } else if (sectionKey === 'tl') {
+        document.getElementById("tl-name").value = "";
+        document.getElementById("tl-license-number").value = "";
+        document.getElementById("tl-start-date").value = "";
+        document.getElementById("tl-expiry-date").value = "";
+    }
+    document.querySelectorAll(".dob-field").forEach(el => el.value = "");
+    document.querySelectorAll(".nationality-field").forEach(el => el.value = "");
+}
+
+async function handleFileSelected(inputEl, sectionKey) {
+    const file = inputEl.files?.[0];
+    if (!file) return;
+    
+    console.log("File selected for:", sectionKey);
+    clearFields(sectionKey);
+
+    if (sectionKey === "eid") cachedFileEid = file;
+    else if (sectionKey === "passport") cachedFilePassport = file;
+    else if (sectionKey === "tl") cachedFileTl = file;
+
+    await handleOcrUpload(sectionKey);
+}
+
+async function handleOcrUpload(sectionKey) {
+    console.log("Starting OCR Upload process for:", sectionKey);
+    const promptEl = document.getElementById(`attach-${sectionKey}-prompt`);
+    
+    promptEl.className = "mt-3 p-3 rounded-lg text-[10px] font-black uppercase tracking-widest border-l-4 animate-pulse-slow bg-amber-50 text-amber-700 border-amber-500";
+    promptEl.textContent = "Processing document, please wait...";
+    promptEl.classList.remove("hidden");
+
+    let file = (sectionKey === "eid") ? cachedFileEid : (sectionKey === "passport") ? cachedFilePassport : cachedFileTl;
+
+    try {
+        const fileUploadArgs = { 
+            "CONTENT_TYPE": "multipart", 
+            "PARTS": [{ "headers": { "Content-Disposition": "file;" }, "content": "__FILE__" }], 
+            "FILE": { "fileParam": "content", "file": file } 
+        };
+        console.log("Calling uploadFile with args:", fileUploadArgs);
+        const uploadResponse = await ZOHO.CRM.API.uploadFile(fileUploadArgs);
+        console.log("uploadFile response:", uploadResponse);
+        
+        const fileId = uploadResponse?.data?.[0]?.details?.id;
+        console.log("File uploaded, ID:", fileId);
+        
+        const validatorArgs = { 
+            "arguments": JSON.stringify({ "fta_id": String(currentRecordId), "file_id": String(fileId) }) 
+        };
+        console.log("Calling ta_fta_eid_validator with args:", validatorArgs);
+        const validatorResult = await ZOHO.CRM.FUNCTIONS.execute("ta_fta_eid_validator", validatorArgs);
+        console.log("ta_fta_eid_validator response:", validatorResult);
+
+        const data = validatorResult?.details?.output ? JSON.parse(validatorResult.details.output) : null;
+        console.log("OCR Data Received:", data);
+
+        if (data && Object.values(data).some(val => val !== null && val !== "")) {
+            if (data.pp_number) document.getElementById("field-pp-number").value = data.pp_number;
+            if (data.pp_issuing_country) document.getElementById("field-pp-country").value = data.pp_issuing_country;
+            if (data.pp_issued_date) document.getElementById("field-pp-issue").value = data.pp_issued_date;
+            if (data.pp_expiry_date) document.getElementById("field-pp-expiry").value = data.pp_expiry_date;
+            if (data.nationality) document.querySelectorAll(".nationality-field").forEach(el => el.value = data.nationality);
+            if (data.date_of_birth) document.querySelectorAll(".dob-field").forEach(el => el.value = data.date_of_birth);
+
+            promptEl.classList.remove("animate-pulse-slow", "bg-amber-50", "text-amber-700", "border-amber-500");
+            promptEl.classList.add("bg-emerald-50", "text-emerald-700", "border-emerald-500");
+            promptEl.textContent = "Data successfully extracted. Please verify all information carefully.";
+        } else {
+            throw new Error("No data extracted");
+        }
+    } catch (err) {
+        console.error("OCR Process Error:", err);
+        clearFields(sectionKey);
+        promptEl.classList.remove("animate-pulse-slow", "bg-amber-50", "text-amber-700", "border-amber-500");
+        promptEl.classList.add("bg-red-50", "text-red-700", "border-red-500");
+        promptEl.textContent = "Processing failed. Kindly verify that the file is correct. If so, the system is currently unable to read or extract its content.";
+    }
+}
+
 function renderPortal(data) {
-    const fields = {
-        "field-account-name": data.account_name,
-        "field-client-name": data.client_name,
-        "field-document-type": data.document_type
-    };
-    
-    Object.keys(fields).forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = fields[id] || "N/A";
-    });
+    console.log("Rendering portal data...");
+    document.getElementById("field-account-name").textContent = data.account_name || "N/A";
+    document.getElementById("field-client-name").textContent = data.client_name || "N/A";
+    document.getElementById("field-document-type").textContent = data.document_type || "N/A";
 
-    const shouldPopulate = data.modification_origin && data.modification_origin.trim() !== "";
-
-    document.getElementById("field-dob").value = shouldPopulate ? formatDateForInput(data.date_of_birth) : "";
+    const shouldPopulate = !!data.modification_origin;
+    const dobValue = shouldPopulate ? formatDateForInput(data.date_of_birth) : "";
+    document.querySelectorAll(".dob-field").forEach(el => el.value = dobValue);
     
-    const countries = Array.from(document.getElementById("field-nationality").options).slice(1).map(o => o.value);
+    const countries = Array.from(document.querySelectorAll(".nationality-field")[0]?.options || []).slice(1).map(o => o.value);
     populateCountrySelects(countries, shouldPopulate ? data.nationality : "");
     
+    document.getElementById("field-eid-number").value = shouldPopulate ? (data.eid_number || "") : "";
+    document.getElementById("field-eid-issue").value = shouldPopulate ? formatDateForInput(data.eid_issued_date) : "";
+    document.getElementById("field-eid-expiry").value = shouldPopulate ? formatDateForInput(data.eid_expiry_date) : "";
+
     document.getElementById("field-pp-number").value = shouldPopulate ? (data.pp_number || "") : "";
     document.getElementById("field-pp-country").value = shouldPopulate ? (data.pp_issuing_country || "") : "";
     document.getElementById("field-pp-issue").value = shouldPopulate ? formatDateForInput(data.pp_issued_date) : "";
     document.getElementById("field-pp-expiry").value = shouldPopulate ? formatDateForInput(data.pp_expiry_date) : "";
-
-    document.getElementById("field-eid-number").value = shouldPopulate ? (data.eid_number || "") : "";
-    document.getElementById("field-eid-issue").value = shouldPopulate ? formatDateForInput(data.eid_issued_date) : "";
-    document.getElementById("field-eid-expiry").value = shouldPopulate ? formatDateForInput(data.eid_expiry_date) : "";
 
     document.getElementById("tl-name").value = shouldPopulate ? (data.tl_name || "") : "";
     document.getElementById("tl-license-number").value = shouldPopulate ? (data.tl_license_number || "") : "";
@@ -105,81 +206,26 @@ function renderPortal(data) {
     document.getElementById("tl-expiry-date").value = shouldPopulate ? formatDateForInput(data.tl_expiry_date) : "";
     
     const docType = (data.document_type || "").toLowerCase();
-    
-    const personalSection = document.getElementById("section-personal");
-    const clientNameGroup = document.getElementById("group-client-name");
-    const eidSection = document.getElementById("section-eid");
-    const passportSection = document.getElementById("section-passport");
-    const tlSection = document.getElementById("section-tl");
-
-    // Reset visibilities
-    eidSection.classList.add("hidden");
-    passportSection.classList.add("hidden");
-    tlSection.classList.add("hidden");
-    personalSection.classList.remove("hidden");
-    clientNameGroup.classList.remove("hidden");
-
-    // Conditional visibility
-    if (docType.includes("trade license")) {
-        tlSection.classList.remove("hidden");
-        personalSection.classList.add("hidden");
-        clientNameGroup.classList.add("hidden");
-    } else if (docType.includes("eid") || docType.includes("visa")) {
-        eidSection.classList.remove("hidden");
-    } else if (docType.includes("passport")) {
-        passportSection.classList.remove("hidden");
-    }
+    document.getElementById("section-eid").classList.toggle("hidden", !(docType.includes("eid") || docType.includes("visa")));
+    document.getElementById("section-passport").classList.toggle("hidden", !docType.includes("passport"));
+    document.getElementById("section-tl").classList.toggle("hidden", !docType.includes("trade license"));
+    ["attach-eid", "attach-passport", "attach-tl"].forEach(id => document.getElementById(id).classList.toggle("hidden", shouldPopulate));
 }
 
 async function submitForm() {
-    const docType = (document.getElementById("field-document-type").textContent || "").toLowerCase();
+    console.log("Submitting form...");
     
-    // Clear existing error styling
-    document.querySelectorAll('.error-text').forEach(el => el.remove());
-    document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500'));
+    const docType = document.getElementById("field-document-type").textContent.toLowerCase();
+    let dobInput = document.querySelector(".dob-field");
+    let natInput = document.querySelector(".nationality-field");
 
-    let isValid = true;
-    const requiredFields = [];
-
-    if (docType.includes("trade license")) {
-        requiredFields.push(
-            document.getElementById("tl-name"),
-            document.getElementById("tl-license-number"),
-            document.getElementById("tl-start-date"),
-            document.getElementById("tl-expiry-date")
-        );
-    } else if (docType.includes("eid") || docType.includes("visa")) {
-        requiredFields.push(
-            document.getElementById("field-dob"),
-            document.getElementById("field-nationality"),
-            document.getElementById("field-eid-number"),
-            document.getElementById("field-eid-issue"),
-            document.getElementById("field-eid-expiry")
-        );
+    if (docType.includes("eid") || docType.includes("visa")) {
+        dobInput = document.getElementById("eid-dob") || dobInput;
+        natInput = document.getElementById("eid-nationality") || natInput;
     } else if (docType.includes("passport")) {
-        requiredFields.push(
-            document.getElementById("field-dob"),
-            document.getElementById("field-nationality"),
-            document.getElementById("field-pp-number"),
-            document.getElementById("field-pp-country"),
-            document.getElementById("field-pp-issue"),
-            document.getElementById("field-pp-expiry")
-        );
+        dobInput = document.getElementById("pp-dob") || dobInput;
+        natInput = document.getElementById("pp-nationality") || natInput;
     }
-
-    for (const field of requiredFields) {
-        if (!field.value || field.value.trim() === "") {
-            isValid = false;
-            field.classList.add('border-red-500');
-            
-            const error = document.createElement('p');
-            error.className = 'error-text text-[7px] text-red-500 font-black mt-1';
-            error.textContent = 'Required field';
-            field.parentNode.appendChild(error);
-        }
-    }
-
-    if (!isValid) return;
 
     const recordData = {
         tl_name: document.getElementById("tl-name").value,
@@ -193,34 +239,24 @@ async function submitForm() {
         eid_number: document.getElementById("field-eid-number").value,
         eid_issued_date: document.getElementById("field-eid-issue").value,
         eid_expiry_date: document.getElementById("field-eid-expiry").value,
-        date_of_birth: document.getElementById("field-dob").value,
-        nationality: document.getElementById("field-nationality").value,
-        account_name: document.getElementById("field-account-name").textContent,
-        client_name: document.getElementById("field-client-name").textContent,
-        document_type: document.getElementById("field-document-type").textContent,
+        date_of_birth: dobInput.value,
+        nationality: natInput.value,
         modification_origin: currentModificationOrigin || ""
     };
-    await triggerLog("update_record", recordData);
-}
 
-const triggerLog = async (action, recordData) => {
     try {
-        const payload = { 
-            "action": action, 
-            "account_id": currentAccountID, 
-            "fta_id": currentRecordId, 
-            "affected_record": recordData 
+        const updateArgs = { 
+            "arguments": JSON.stringify({ "action": "update_record", "account_id": currentAccountID, "fta_id": currentRecordId, "affected_record": recordData }) 
         };
-        console.log("Arguments for fta_case_update:", payload);
-        const result = await ZOHO.CRM.FUNCTIONS.execute("fta_case_update", { "arguments": JSON.stringify(payload) });
-        console.log("Result for fta_case_update:", result);
+        console.log("Calling fta_case_update with args:", updateArgs);
+        const updateResult = await ZOHO.CRM.FUNCTIONS.execute("fta_case_update", updateArgs);
+        console.log("fta_case_update response:", updateResult);
         
         document.getElementById("success-modal").classList.remove("hidden");
     } catch (err) { 
-        document.getElementById("error-modal").classList.remove("hidden");
+        console.error("Submission error:", err);
+        document.getElementById("error-modal").classList.remove("hidden"); 
     }
-};
-
-function closeAndReload() { 
-    $Client.close();  
 }
+
+function closeAndReload() { $Client.close(); }
