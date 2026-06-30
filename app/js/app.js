@@ -132,6 +132,12 @@ async function handleOcrUpload(sectionKey) {
 
     let file = (sectionKey === "eid") ? cachedFileEid : (sectionKey === "passport") ? cachedFilePassport : cachedFileTl;
 
+    const validatorMap = {
+        "passport": "ta_pp_ocr_zia_validator",
+        "eid": "ta_eid_visa_ocr_zia_validator",
+        "tl": "ta_tl_ocr_zia_validator"
+    };
+
     try {
         const fileUploadArgs = { 
             "CONTENT_TYPE": "multipart", 
@@ -140,26 +146,38 @@ async function handleOcrUpload(sectionKey) {
         };
         console.log("Calling uploadFile with args:", fileUploadArgs);
         const uploadResponse = await ZOHO.CRM.API.uploadFile(fileUploadArgs);
-        console.log("uploadFile response:", uploadResponse);
         
         const fileId = uploadResponse?.data?.[0]?.details?.id;
-        console.log("File uploaded, ID:", fileId);
         
         const validatorArgs = { 
             "arguments": JSON.stringify({ "fta_id": String(currentRecordId), "file_id": String(fileId) }) 
         };
-        console.log("Calling ta_fta_eid_validator with args:", validatorArgs);
-        const validatorResult = await ZOHO.CRM.FUNCTIONS.execute("ta_fta_eid_validator", validatorArgs);
-        console.log("ta_fta_eid_validator response:", validatorResult);
+        
+        const functionName = validatorMap[sectionKey];
+        console.log(`Calling ${functionName} with args:`, validatorArgs);
+        const validatorResult = await ZOHO.CRM.FUNCTIONS.execute(functionName, validatorArgs);
+        console.log(`${functionName} response:`, validatorResult);
 
         const data = validatorResult?.details?.output ? JSON.parse(validatorResult.details.output) : null;
         console.log("OCR Data Received:", data);
 
-        if (data && Object.values(data).some(val => val !== null && val !== "")) {
-            if (data.pp_number) document.getElementById("field-pp-number").value = data.pp_number;
-            if (data.pp_issuing_country) document.getElementById("field-pp-country").value = data.pp_issuing_country;
-            if (data.pp_issued_date) document.getElementById("field-pp-issue").value = data.pp_issued_date;
-            if (data.pp_expiry_date) document.getElementById("field-pp-expiry").value = data.pp_expiry_date;
+        if (data && data.status === "success") {
+            if (sectionKey === "passport") {
+                if (data.pp_number) document.getElementById("field-pp-number").value = data.pp_number;
+                if (data.pp_issuing_country) document.getElementById("field-pp-country").value = data.pp_issuing_country;
+                if (data.pp_issued_date) document.getElementById("field-pp-issue").value = data.pp_issued_date;
+                if (data.pp_expiry_date) document.getElementById("field-pp-expiry").value = data.pp_expiry_date;
+            } else if (sectionKey === "eid") {
+                if (data.eid_number) document.getElementById("field-eid-number").value = data.eid_number;
+                if (data.eid_issued_date) document.getElementById("field-eid-issue").value = data.eid_issued_date;
+                if (data.eid_expiry_date) document.getElementById("field-eid-expiry").value = data.eid_expiry_date;
+            } else if (sectionKey === "tl") {
+                if (data.tl_name) document.getElementById("tl-name").value = data.tl_name;
+                if (data.tl_license_number) document.getElementById("tl-license-number").value = data.tl_license_number;
+                if (data.tl_start_date) document.getElementById("tl-start-date").value = data.tl_start_date;
+                if (data.tl_expiry_date) document.getElementById("tl-expiry-date").value = data.tl_expiry_date;
+            }
+            
             if (data.nationality) document.querySelectorAll(".nationality-field").forEach(el => el.value = data.nationality);
             if (data.date_of_birth) document.querySelectorAll(".dob-field").forEach(el => el.value = data.date_of_birth);
 
@@ -167,14 +185,14 @@ async function handleOcrUpload(sectionKey) {
             promptEl.classList.add("bg-emerald-50", "text-emerald-700", "border-emerald-500");
             promptEl.textContent = "Data successfully extracted. Please verify all information carefully.";
         } else {
-            throw new Error("No data extracted");
+            throw new Error("OCR validation failed");
         }
     } catch (err) {
         console.error("OCR Process Error:", err);
         clearFields(sectionKey);
         promptEl.classList.remove("animate-pulse-slow", "bg-amber-50", "text-amber-700", "border-amber-500");
         promptEl.classList.add("bg-red-50", "text-red-700", "border-red-500");
-        promptEl.textContent = "Processing failed. Kindly verify that the file is correct. If so, the system is currently unable to read or extract its content.";
+        promptEl.textContent = "Sorry, I couldn't read the file. Please upload a clearer file or type the information manually.";
     }
 }
 
@@ -184,7 +202,9 @@ function renderPortal(data) {
     document.getElementById("field-client-name").textContent = data.client_name || "N/A";
     document.getElementById("field-document-type").textContent = data.document_type || "N/A";
 
-    const shouldPopulate = !!data.modification_origin;
+    const isThirtyDaysExpiry = data.case_source === "30 Days before expiry";
+    const shouldPopulate = !!data.case_source && !isThirtyDaysExpiry;
+
     const dobValue = shouldPopulate ? formatDateForInput(data.date_of_birth) : "";
     document.querySelectorAll(".dob-field").forEach(el => el.value = dobValue);
     
