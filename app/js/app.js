@@ -123,6 +123,12 @@ async function handleFileSelected(inputEl, sectionKey) {
 }
 
 async function handleOcrUpload(sectionKey) {
+    const overlay = document.getElementById("loading-overlay");
+    const statusText = document.getElementById("loading-status-text");
+    
+    statusText.textContent = "Uploading Attachment...";
+    overlay.classList.remove("hidden");
+
     console.log("Starting OCR Upload process for:", sectionKey);
     const promptEl = document.getElementById(`attach-${sectionKey}-prompt`);
     
@@ -133,8 +139,8 @@ async function handleOcrUpload(sectionKey) {
     let file = (sectionKey === "eid") ? cachedFileEid : (sectionKey === "passport") ? cachedFilePassport : cachedFileTl;
 
     const validatorMap = {
-        "passport": "ta_pp_ocr_zia_validator",
-        "eid": "ta_eid_visa_ocr_zia_validator",
+        "passport": "ta_pp_ocr_zia_validator_v2",
+        "eid": "ta_eid_visa_ocr_zia_validator_v2_1",
         "tl": "ta_tl_ocr_zia_validator"
     };
 
@@ -144,22 +150,25 @@ async function handleOcrUpload(sectionKey) {
             "PARTS": [{ "headers": { "Content-Disposition": "file;" }, "content": "__FILE__" }], 
             "FILE": { "fileParam": "content", "file": file } 
         };
-        console.log("Calling uploadFile with args:", fileUploadArgs);
         const uploadResponse = await ZOHO.CRM.API.uploadFile(fileUploadArgs);
         
         const fileId = uploadResponse?.data?.[0]?.details?.id;
+        console.log("File uploaded successfully. File ID:", fileId);
         
+        statusText.textContent = "Scanning File...";
+
         const validatorArgs = { 
             "arguments": JSON.stringify({ "fta_id": String(currentRecordId), "file_id": String(fileId) }) 
         };
+
+        console.log("Validator Arguments (JSON):");
+        console.log(JSON.stringify(validatorArgs, null, 2));
         
         const functionName = validatorMap[sectionKey];
-        console.log(`Calling ${functionName} with args:`, validatorArgs);
         const validatorResult = await ZOHO.CRM.FUNCTIONS.execute(functionName, validatorArgs);
         console.log(`${functionName} response:`, validatorResult);
 
         const data = validatorResult?.details?.output ? JSON.parse(validatorResult.details.output) : null;
-        console.log("OCR Data Received:", data);
 
         if (data && data.status === "success") {
             if (sectionKey === "passport") {
@@ -176,6 +185,10 @@ async function handleOcrUpload(sectionKey) {
                 if (data.tl_license_number) document.getElementById("tl-license-number").value = data.tl_license_number;
                 if (data.tl_start_date) document.getElementById("tl-start-date").value = data.tl_start_date;
                 if (data.tl_expiry_date) document.getElementById("tl-expiry-date").value = data.tl_expiry_date;
+                console.log("TL Name:", document.getElementById("tl-name").value);
+                console.log("TL Number:", document.getElementById("tl-license-number").value);
+                console.log("TL Start Date:", document.getElementById("tl-start-date").value);
+                console.log("TL Expiry Date:", document.getElementById("tl-expiry-date").value);
             }
             
             if (data.nationality) document.querySelectorAll(".nationality-field").forEach(el => el.value = data.nationality);
@@ -193,6 +206,8 @@ async function handleOcrUpload(sectionKey) {
         promptEl.classList.remove("animate-pulse-slow", "bg-amber-50", "text-amber-700", "border-amber-500");
         promptEl.classList.add("bg-red-50", "text-red-700", "border-red-500");
         promptEl.textContent = "Sorry, I couldn't read the file. Please upload a clearer file or type the information manually.";
+    } finally {
+        overlay.classList.add("hidden");
     }
 }
 
@@ -234,7 +249,50 @@ function renderPortal(data) {
 
 async function submitForm() {
     console.log("Submitting form...");
+
     
+    
+    document.querySelectorAll(".error-text").forEach(el => el.remove());
+    const fieldsToValidate = [];
+    const isTradeLicense = !document.getElementById("section-tl").classList.contains("hidden");
+
+    if (!isTradeLicense) {
+        fieldsToValidate.push({ id: ".dob-field", label: "Date of Birth" });
+        fieldsToValidate.push({ id: ".nationality-field", label: "Nationality" });
+    }
+
+    if (!document.getElementById("section-eid").classList.contains("hidden")) {
+        fieldsToValidate.push({ id: "#field-eid-number", label: "EID Number" });
+        fieldsToValidate.push({ id: "#field-eid-issue", label: "Issue Date" });
+        fieldsToValidate.push({ id: "#field-eid-expiry", label: "Expiry Date" });
+    }
+    if (!document.getElementById("section-passport").classList.contains("hidden")) {
+        fieldsToValidate.push({ id: "#field-pp-number", label: "Passport Number" });
+        fieldsToValidate.push({ id: "#field-pp-country", label: "Issuing Country" });
+        fieldsToValidate.push({ id: "#field-pp-issue", label: "Issue Date" });
+        fieldsToValidate.push({ id: "#field-pp-expiry", label: "Expiry Date" });
+    }
+    if (!document.getElementById("section-tl").classList.contains("hidden")) {
+        fieldsToValidate.push({ id: "#tl-name", label: "License Name" });
+        fieldsToValidate.push({ id: "#tl-license-number", label: "License Number" });
+        fieldsToValidate.push({ id: "#tl-start-date", label: "Start Date" });
+        fieldsToValidate.push({ id: "#tl-expiry-date", label: "Expiry Date" });
+    }
+
+    let isValid = true;
+    fieldsToValidate.forEach(field => {
+        const el = document.querySelector(field.id);
+        if (!el || !el.value || el.value.trim() === "") {
+            isValid = false;
+            const errorMsg = document.createElement("div");
+            errorMsg.className = "error-text text-red-600 text-[10px] mt-1 font-bold";
+            errorMsg.textContent = `${field.label} is required.`;
+            el.parentNode.appendChild(errorMsg);
+        }
+    });
+
+    if (!isValid) return;
+
     const docType = document.getElementById("field-document-type").textContent.toLowerCase();
     let dobInput = document.querySelector(".dob-field");
     let natInput = document.querySelector(".nationality-field");
@@ -259,8 +317,8 @@ async function submitForm() {
         eid_number: document.getElementById("field-eid-number").value,
         eid_issued_date: document.getElementById("field-eid-issue").value,
         eid_expiry_date: document.getElementById("field-eid-expiry").value,
-        date_of_birth: dobInput.value,
-        nationality: natInput.value,
+        date_of_birth: isTradeLicense ? "" : (dobInput?.value || ""),
+        nationality: isTradeLicense ? "" : (natInput?.value || ""),
         modification_origin: currentModificationOrigin || ""
     };
 
